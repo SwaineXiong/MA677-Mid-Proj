@@ -2,11 +2,11 @@
 title: "Midterm Project"
 author: "Chenxuan Xiong"
 date: "2024-03-26"
-output: pdf_document
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Order Statistics
@@ -41,13 +41,75 @@ Min: $f(X_{(1)}) = \frac{n}{b-a}(\frac{b-x}{b-a})^{n-1}$
 
 Max: $f(X_{(n)}) = \frac{n}{b-a}(\frac{x-a}{b-a})^{n-1}$
 
-Mean: $f(X_{(n/2)}) = \frac{n!}{(n/2-1)!(n/2)!}(\frac{x-a}{b-a})^{n/2-1}(1-\frac{x-a}{b-a})^{n/2}\frac{1}{b-a}$
+Median: $f(X_{(n/2)}) = \frac{n!}{(n/2-1)!(n/2)!}(\frac{x-a}{b-a})^{n/2-1}(1-\frac{x-a}{b-a})^{n/2}\frac{1}{b-a}$
 
 25 quantile: $f(X_{(n/4)}) = \frac{n!}{(n/4-1)!(3n/4)!}(\frac{x-a}{b-a})^{n/4-1}(1-\frac{x-a}{b-a})^{3n/4}\frac{1}{b-a}$
 
 75 quantile: $f(X_{(3n/4)}) = \frac{n!}{(3n/4-1)!(n/4)!}(\frac{x-a}{b-a})^{3n/4-1}(1-\frac{x-a}{b-a})^{n/4}\frac{1}{b-a}$
 
-### 2. Exponatial Distribution
+#### Simulation with U(0,1)
+
+```{r}
+library(ggplot2)
+
+set.seed(123)
+
+sample_size <- 10000
+
+uniform_sample <- runif(sample_size)
+
+order_stats <- quantile(uniform_sample, probs = c(0, 0.25, 0.5, 0.75, 1))
+
+
+plot_data <- data.frame(
+  Statistic = c('Min', '1st Qu.', 'Median', '3rd Qu.', 'Max'),
+  Value = c(order_stats[1], order_stats[2], order_stats[3], order_stats[4], order_stats[5])
+)
+
+ggplot(plot_data, aes(x = reorder(Statistic, Value), y = Value)) +
+  geom_point() +
+  geom_segment(aes(xend = Statistic, yend = 0), color = 'blue') +
+  theme_minimal() +
+  labs(title = "Order Statistics for U(0,1)", x = "Statistic", y = "Value")
+```
+```{r}
+library(ggplot2)
+library(reshape2)
+
+n <- 10
+iterations <- 1000
+
+min_values <- numeric(iterations)
+q25_values <- numeric(iterations)
+median_values <- numeric(iterations)
+q75_values <- numeric(iterations)
+max_values <- numeric(iterations)
+
+set.seed(123)
+for (i in 1:iterations) {
+  sample <- runif(n, min = 0, max = 1)
+  min_values[i] <- min(sample)
+  q25_values[i] <- quantile(sample, 0.25)
+  median_values[i] <- median(sample)
+  q75_values[i] <- quantile(sample, 0.75)
+  max_values[i] <- max(sample)
+}
+
+df <- data.frame(Minimum = min_values, `25%` = q25_values, Median = median_values, 
+                 `75%` = q75_values, Maximum = max_values)
+
+df_melted <- melt(df)
+
+ggplot(df_melted, aes(x = value, fill = variable)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Distribution of Order Statistics (Standard Uniform Samples)",
+       x = "Value", y = "Density") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1")
+
+```
+
+### 2. Exponential Distribution
 
 Probability density function: $f(x) = \lambda e^{-\lambda x}$ for $x≥0$
 
@@ -59,11 +121,71 @@ Min: $f(X_{(1)}) = ne^{-\lambda nx}$
 
 Max: $f(X_{(n)}) = ne^{-\lambda nx}x^{n-1}$
 
-Mean: $f(X_{(n/2)}) = \frac{n!}{(n/2-1)!(n/2)!}e^{-\lambda nx}x^{n/2-1}$
+Median: $f(X_{(n/2)}) = \frac{n!}{(n/2-1)!(n/2)!}e^{-\lambda nx}x^{n/2-1}$
 
 25 quantile: $f(X_{(n/4)}) = \frac{n!}{(n/4-1)!(3n/4)!}e^{-\lambda nx}x^{n/4-1}$
 
 75 quantile: $f(X_{(3n/4)}) = \frac{n!}{(3n/4-1)!(n/4)!}e^{-\lambda nx}x^{3n/4-1}$
+
+#### Simulation with standard exponential distribution
+
+```{r}
+n <- 10000
+
+sample_data <- rexp(n, rate = 1)  
+min_stat <- min(sample_data)
+quantile_25 <- quantile(sample_data, probs = 0.25)
+median_stat <- median(sample_data)
+quantile_75 <- quantile(sample_data, probs = 0.75)
+max_stat <- max(sample_data)
+
+order_stats <- c(min_stat, quantile_25, median_stat, quantile_75, max_stat)
+
+plot_data <- data.frame(
+  Statistic = c('Min', '1st Qu.', 'Median', '3rd Qu.', 'Max'),
+  Value = c(order_stats[1], order_stats[2], median_stat, order_stats[4], order_stats[5])
+)
+ggplot(plot_data, aes(x = reorder(Statistic, Value), y = Value)) +
+  geom_point() +
+  geom_segment(aes(xend = Statistic, yend = 0), color = 'blue') +
+  theme_minimal() +
+  labs(title = "Order Statistics for Standard Exponential", x = "Statistic", y = "Value")
+```
+
+```{r}
+n <- 100
+iterations <- 1000
+
+min_values <- numeric(iterations)
+q25_values <- numeric(iterations)
+median_values <- numeric(iterations)
+q75_values <- numeric(iterations)
+max_values <- numeric(iterations)
+
+set.seed(123)
+for (i in 1:iterations) {
+  sample <- rexp(n, rate = 1)
+  min_values[i] <- min(sample)
+  q25_values[i] <- quantile(sample, 0.25)
+  median_values[i] <- median(sample)
+  q75_values[i] <- quantile(sample, 0.75)
+  max_values[i] <- max(sample)
+}
+
+df <- data.frame(Minimum = min_values, `25%` = q25_values, Median = median_values, 
+                 `75%` = q75_values, Maximum = max_values)
+
+df_melted <- melt(df)
+
+ggplot(df_melted, aes(x = value, fill = variable)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Distribution of Order Statistics (Standard Exponential Samples)",
+       x = "Value", y = "Density") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1")
+
+```
+
 
 ### 3. Normal Distribution
 
@@ -79,11 +201,79 @@ Min: $f(X_{(1)}) = n\frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2} \left(\frac{x -
 
 Max: $f(X_{(n)}) = n\frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2} \left(\frac{x - \mu}{\sigma}\right)^2}(\Phi(\frac{x-\mu}{\sigma}))^{n-1}$
 
-Mean: $f(X_{(n/2)}) = \frac{n!}{(n/2-1)!(n/2)!}(\Phi(\frac{x-\mu}{\sigma}))^{n/2-1}\frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2} \left(\frac{x - \mu}{\sigma}\right)^2}(1-\Phi(\frac{x-\mu}{\sigma}))^{n/2}$
+Median: $f(X_{(n/2)}) = \frac{n!}{(n/2-1)!(n/2)!}(\Phi(\frac{x-\mu}{\sigma}))^{n/2-1}\frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2} \left(\frac{x - \mu}{\sigma}\right)^2}(1-\Phi(\frac{x-\mu}{\sigma}))^{n/2}$
 
 25 quantile: $f(X_{(n/4)}) = \frac{n!}{(n/4-1)!(3n/4)!}(\Phi(\frac{x-\mu}{\sigma}))^{n/4-1}\frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2} \left(\frac{x - \mu}{\sigma}\right)^2}(1-\Phi(\frac{x-\mu}{\sigma}))^{3n/4}$
 
 75 quantile: $f(X_{(3n/4)}) = \frac{n!}{(3n/4-1)!(n/4)!}(\Phi(\frac{x-\mu}{\sigma}))^{3n/4-1}\frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2} \left(\frac{x - \mu}{\sigma}\right)^2}(1-\Phi(\frac{x-\mu}{\sigma}))^{n/4}$
+
+#### Simulation with standard normal distribution
+
+```{r}
+library(ggplot2)
+
+set.seed(42)
+
+sample_size <- 10000
+simulated_data <- rnorm(sample_size, mean = 0, sd = 1)
+
+min_val <- min(simulated_data)
+first_quartile <- quantile(simulated_data, probs = 0.25)
+median_val <- median(simulated_data)
+third_quartile <- quantile(simulated_data, probs = 0.75)
+max_val <- max(simulated_data)
+
+order_stats <- data.frame(
+  Statistic = c('Min', '1st Qu.', 'Median', '3rd Qu.', 'Max'),
+  Value = c(min_val, first_quartile, median_val, third_quartile, max_val)
+)
+
+ggplot(order_stats, aes(x = reorder(Statistic, Value), y = Value)) +
+  geom_point() +
+  geom_segment(aes(xend = Statistic, yend = 0), color = 'blue') +
+  theme_minimal() +
+  labs(title = "Order Statistics of a Standard Normal Distribution",
+       x = "Statistic",
+       y = "Value")
+
+```
+
+```{r}
+
+n <- 100 
+iterations <- 1000 
+
+min_values <- numeric(iterations)
+q25_values <- numeric(iterations)
+median_values <- numeric(iterations)
+q75_values <- numeric(iterations)
+max_values <- numeric(iterations)
+
+set.seed(123) 
+for (i in 1:iterations) {
+  sample <- rnorm(n) # Generate a sample
+  min_values[i] <- min(sample) # Minimum
+  q25_values[i] <- quantile(sample, 0.25) # 25% Quantile
+  median_values[i] <- median(sample) # Median
+  q75_values[i] <- quantile(sample, 0.75) # 75% Quantile
+  max_values[i] <- max(sample) # Maximum
+}
+
+df <- data.frame(Minimum = min_values, `25%` = q25_values, Median = median_values, 
+                 `75%` = q75_values, Maximum = max_values)
+
+library(reshape2)
+df_melted <- melt(df)
+
+ggplot(df_melted, aes(x = value, fill = variable)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Distribution of Order Statistics (Standard Normal Samples)",
+       x = "Value",
+       y = "Density") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1") 
+
+```
 
 ## Markov Chain in Weather Forecasting
 
@@ -143,12 +333,12 @@ forecast
 
 To calculate the speed of the outer wheel, we use the formula:$$v = \frac{2\pi r}{t}$$
 
-The radius (r) is 1320 feet, and time is recorded in the .txt file, we measure the speed in feet per second
+The radius (r) is 1320 feet, and time is recorded in the .txt file.
 
 ```{r}
 data = read.table("rotation_time.txt")
-vector_data <- unlist(data)
-speed_data = 2*pi*1320/(vector_data*3600)
+time_data <- unlist(data)
+speed_data = 2*pi*1320/(time_data)
 mean_value <- mean(speed_data)
 se <- sd(speed_data) / sqrt(length(speed_data))
 
@@ -162,4 +352,12 @@ ci <- c(lower, upper)
 print(ci)
 ```
 
-The 90% confidence interval for the speed is [0.09963162,0.10269894] feet/s.
+The 90% confidence interval for the speed is [358.6738, 369.7162].
+
+
+Based on the data we've collected and our calculations, we are 90% certain that the true average speed falls between 358.7 and 369.7 feet per hour. This means that if we repeated this study many times, about 90 out of 100 times, the interval we calculated would contain the true average speed.
+
+
+It's a statistical way of saying we're pretty sure, but not absolutely certain, about where the true value lies based on our sample. In more technical terms, the interval is calculated using the sample mean and the standard error, multiplied by the z-score that corresponds to the 90% confidence level from the student-t distribution. If we were to sample repeatedly from the same population and construct intervals in the same way, we'd expect 90% of those intervals to contain the population mean.
+
+
